@@ -50,36 +50,46 @@ export default function Login() {
 
       console.log("Login Response:", res.data);
 
-      const { message, token, role, email, id } = res.data;
+      const { success, message, token, role, email, id, user } = res.data;
 
-      localStorage.setItem("token", token);
+      if (success) {
+        // Store token and user data
+        localStorage.setItem("token", token);
 
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          id,
-          email,
-          role,
-        }),
-      );
+        // Store user data - use the user object if available, otherwise use individual fields
+        const userData = user || { id, email, role };
+        localStorage.setItem("user", JSON.stringify(userData));
 
-      if (role === "employee") {
-        navigate("/employee");
+        // Redirect based on role
+        if (role === "employee") {
+          navigate("/employee");
+        } else {
+          navigate("/panel");
+        }
+
+        alert(message || "Login successful");
       } else {
-        navigate("/panel");
+        alert(message || "Login failed");
       }
-
-      alert(message);
     } catch (err) {
-      console.log(err);
+      console.error("Login error:", err);
 
       if (err.response) {
-        alert(err.response.data.message);
+        alert(err.response.data.message || "Login failed");
+      } else if (err.request) {
+        alert("No response from server. Please check your connection.");
       } else {
-        alert("Server Error");
+        alert("An error occurred. Please try again.");
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle Enter key press
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleValidate();
     }
   };
 
@@ -89,43 +99,47 @@ export default function Login() {
         <h1 className="text-3xl font-bold text-center mb-8">Employee Login</h1>
 
         <div className="mb-4">
-          <label>Email</label>
-
+          <label className="block mb-2 font-medium">Email</label>
           <input
             type="email"
             name="email"
             value={loginData.email}
             onChange={handleChange}
-            className="w-full border rounded-md h-10 px-3"
+            onKeyPress={handleKeyPress}
+            placeholder="Enter your email"
+            className="w-full border rounded-md h-10 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
-
-          {error.email && <p className="text-red-500">{error.email}</p>}
+          {error.email && (
+            <p className="text-red-500 text-sm mt-1">{error.email}</p>
+          )}
         </div>
 
-        <div className="mb-4">
-          <label>Password</label>
-
+        <div className="mb-6">
+          <label className="block mb-2 font-medium">Password</label>
           <input
             type="password"
             name="password"
             value={loginData.password}
             onChange={handleChange}
-            className="w-full border rounded-md h-10 px-3"
+            onKeyPress={handleKeyPress}
+            placeholder="Enter your password"
+            className="w-full border rounded-md h-10 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
-
-          {error.password && <p className="text-red-500">{error.password}</p>}
+          {error.password && (
+            <p className="text-red-500 text-sm mt-1">{error.password}</p>
+          )}
         </div>
 
         <button
           onClick={handleValidate}
           disabled={loading}
-          className="w-full h-10 bg-indigo-600 text-white rounded-md"
+          className="w-full h-10 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? "Logging in..." : "Login"}
         </button>
 
         <div className="mt-4 text-center">
-          <Link to="/signup" className="text-indigo-600">
+          <Link to="/signup" className="text-indigo-600 hover:underline">
             Don't have an account? Sign up
           </Link>
         </div>
